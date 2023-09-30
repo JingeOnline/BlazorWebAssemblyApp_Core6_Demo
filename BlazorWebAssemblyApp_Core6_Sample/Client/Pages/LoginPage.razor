@@ -1,0 +1,68 @@
+﻿@page "/login"
+@using BlazorWebAssemblyApp_Core6_Sample.Client.Authentication;
+@using BlazorWebAssemblyApp_Core6_Sample.Shared;
+
+@inject HttpClient httpClient
+@inject AuthenticationStateProvider authStateProvider
+@inject NavigationManager navManager
+@inject IJSRuntime jsRuntime
+
+
+<PageTitle>Login</PageTitle>
+<div class="container my-5">
+    <div class="row">
+        <div class="col-md-6">
+           @*  <form class="form-signin"> *@
+                <h1 class="my-3">Login to Your Account</h1>
+
+                <div class="form-label-group my-3">
+                    <label class="my-1 fw-bolder" for="inputEmail">Email address</label>
+                    @* <input type="email" id="inputEmail" class="form-control my-1" placeholder="Email address" required="" autofocus=""> *@
+                    <input @bind="loginRequest.UserName" class="form-control" placeholder="Email address"/>
+                </div>
+
+                <div class="form-label-group my-3">
+                    <label class="my-1 fw-bolder" for="inputPassword">Password</label>
+                    @* <input type="password" id="inputPassword" class="form-control my-1" placeholder="Password" required=""> *@
+                    <input @bind="loginRequest.Password" class="form-control" placeholder="Password" type="password"/>
+                </div>
+
+                <div class="checkbox my-3">
+                    <label>
+                        <input type="checkbox" value="remember-me"> Remember me
+                    </label>
+                </div>
+                <button class="mb-5 btn btn-sm btn-secondary btn-block w-50" @onclick="authenticate">LOGIN</button>
+                <div class="my-3 fw-light">
+                    <p class="fw-bold">Don’t have account?</p>
+                    <p>Create one and join myFreedom to view your orders, track delivery and earn myFreedom rewards</p>
+                    <p>Already a myFreedom member, but don’t have an online account? To link your in-store account to access and redeem your credits online, create an account using the same email.</p>
+                    <button class="btn btn-sm btn-secondary btn-block w-50" type="submit">CREATE ACCOUNT</button>
+                </div>
+          @*   </form> *@
+        </div>
+        <div class="col-md-6 my-3 my-md-1">
+            <img src="/imgs/LoginPageSale.webp" alt="LoginPageSale" style='height: 100%; width: 100%; object-fit: contain' />
+        </div>
+    </div>
+
+</div>
+@code {
+    private LoginRequestModel loginRequest = new LoginRequestModel();
+    private async Task authenticate()
+    {
+        var loginResponse = await httpClient.PostAsJsonAsync<LoginRequestModel>("/api/Account/Login",loginRequest);
+        if(loginResponse.IsSuccessStatusCode)
+        {
+            UserSessionModel userSession = await loginResponse.Content.ReadFromJsonAsync<UserSessionModel>();
+            var customAuthStateProvider = (CustomAuthStateProvider)authStateProvider;
+            await customAuthStateProvider.UpdateAuthenticationState(userSession);
+            navManager.NavigateTo("/", true);
+        }
+        else if(loginResponse.StatusCode==System.Net.HttpStatusCode.Unauthorized)
+        {
+            await jsRuntime.InvokeVoidAsync("alert","Invalid Username or Password");
+            return;
+        }
+    }
+}

@@ -1,6 +1,10 @@
 ﻿@page "/fetchdata"
+@using BlazorWebAssemblyApp_Core6_Sample.Client.Authentication;
 @using BlazorWebAssemblyApp_Core6_Sample.Shared
-@inject HttpClient Http
+@attribute [Authorize(Roles = "Administrator")]
+@inject HttpClient httpClient
+@inject NavigationManager navManager
+@inject AuthenticationStateProvider authStateProvider
 
 <PageTitle>Weather forecast</PageTitle>
 
@@ -42,6 +46,18 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        forecasts = await Http.GetFromJsonAsync<WeatherForecast[]>("WeatherForecast");
+        //由于在服务器端，该api也需要认证的用户才能访问，所以每个请求都要携带Token。
+        var customAuthStateProvider = (CustomAuthStateProvider)authStateProvider;
+        string token = await customAuthStateProvider.GetToken();
+        if (!string.IsNullOrEmpty(token))
+        {
+            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer",token);
+            forecasts = await httpClient.GetFromJsonAsync<WeatherForecast[]>("WeatherForecast");
+        }
+        else
+        {
+            //去登陆页面登录，然后才能获取jwt token
+            navManager.NavigateTo("/login");
+        }
     }
 }

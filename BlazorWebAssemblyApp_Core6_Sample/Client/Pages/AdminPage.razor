@@ -1,0 +1,14 @@
+﻿@page "/admin"
+
+@*只允许管理员访问该页面,如果允许多个角色，角色之间用逗号分隔。 *@
+@attribute [Authorize(Roles = "Administrator")]
+
+
+<AuthorizeView>
+    <h3>AdminPage</h3>
+    <h4>Identity.Name: @context.User.Identity.Name</h4>
+    <h4>Identity.AuthenticationType: @context.User.Identity.IsAuthenticated</h4>
+</AuthorizeView>
+@code {
+
+}
